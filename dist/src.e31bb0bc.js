@@ -64420,12 +64420,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 const numberSchema = _joi.default.number().min(100).max(99999999);
 
 const customSchema = _joi.default.string().custom(async (value, helper) => {
-  const response = await _axios.default.post('https://api.bridge.matic.today/api/bridge/approval', {
-    "txHashes": ["0x068614fe19cf079c8012fc122627c7c6ea50651cffb155c2a3fca9d3aeea926f"]
-  });
-  const responseCode = response.data.approvalTxStatus['0x068614fe19cf079c8012fc122627c7c6ea50651cffb155c2a3fca9d3aeea926f'].code;
-  console.log(responseCode);
-  if (responseCode === 5) return true;else throw new Error("Not approved");
+  try {
+    const response = await _axios.default.post('https://api.bridge.matic.today/api/bridge/approval', {
+      "txHashes": [`${value}`]
+    });
+    const responseCode = await response.data.approvalTxStatus[`${value}`].code;
+    if (responseCode === 5) return true;else return false;
+  } catch (e) {
+    return false;
+  }
 });
 
 class Main extends _react.default.Component {
@@ -64473,19 +64476,16 @@ class Main extends _react.default.Component {
     this.state.validity = true;
   }
 
-  validateSchemaCustom(e) {
+  async validateSchemaCustom(e) {
     e.preventDefault();
     const validate = document.getElementById('Input2').value;
-    this.toggleModal3(); // schema validation goes here.
-
-    try {
-      _joi.default.assert(validate, customSchema);
-    } catch {
-      this.state.validity = false;
-      throw new Error('Sentry Type Check Error for Input: ' + validate);
-    }
-
-    this.state.validity = true;
+    this.toggleModal3();
+    const validationResponse = await customSchema.validateAsync(validate);
+    this.setState(validationResponse === true ? {
+      validity: true
+    } : {
+      validity: false
+    });
   }
 
   render() {
@@ -64544,7 +64544,7 @@ class Main extends _react.default.Component {
     })), /*#__PURE__*/_react.default.createElement(_reactstrap.Row, null, /*#__PURE__*/_react.default.createElement(_reactstrap.Col, null, /*#__PURE__*/_react.default.createElement(_reactstrap.Button, {
       className: "btn-block",
       color: "success",
-      onClick: e => this.validateSchemaCustom(e)
+      onClick: async e => await this.validateSchemaCustom(e)
     }, "Submit Transaction Hash"), /*#__PURE__*/_react.default.createElement(_reactstrap.Modal, {
       isOpen: this.state.modal3,
       toggle: this.toggleModal3
@@ -64649,7 +64649,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55796" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50336" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

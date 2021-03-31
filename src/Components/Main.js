@@ -17,16 +17,16 @@ import axios from 'axios';
 
 const numberSchema = Joi.number().min(100).max(99999999)
 const customSchema = Joi.string().custom(async (value, helper) => {
-
-    const response = await axios.post('https://api.bridge.matic.today/api/bridge/approval', {
-        "txHashes": ["0x068614fe19cf079c8012fc122627c7c6ea50651cffb155c2a3fca9d3aeea926f"]
-    })
-
-    const responseCode = response.data.approvalTxStatus['0x068614fe19cf079c8012fc122627c7c6ea50651cffb155c2a3fca9d3aeea926f'].code
-    console.log(responseCode)
-    if (responseCode === 5) return true
-    else throw new Error("Not approved")
-
+    try {
+        const response = await axios.post('https://api.bridge.matic.today/api/bridge/approval', {
+            "txHashes": [`${value}`]
+        })
+        const responseCode = await response.data.approvalTxStatus[`${value}`].code
+        if (responseCode === 5) return true
+        else return false
+    }catch(e) {
+        return false
+    }
 })
 
 class Main extends React.Component {
@@ -65,22 +65,13 @@ class Main extends React.Component {
         this.state.validity = true
     }
 
-    validateSchemaCustom(e) {
+    async validateSchemaCustom(e) {
         e.preventDefault()
         const validate = document.getElementById('Input2').value
         this.toggleModal3()
-        // schema validation goes here.
-        try{
-            Joi.assert(validate, customSchema)
-        }
-        catch{
-            this.state.validity = false
-            throw new Error('Sentry Type Check Error for Input: ' + validate)
-        }
-        this.state.validity = true
+        const validationResponse = await customSchema.validateAsync(validate)
+        this.setState(validationResponse === true ? {validity : true} : {validity : false})
     }
-
-
 
     render() {
         return (
@@ -141,7 +132,7 @@ class Main extends React.Component {
                     </FormGroup>
                     <Row>
                         <Col>
-                            <Button className="btn-block" color="success" onClick={(e) => this.validateSchemaCustom(e)}>Submit Transaction Hash</Button>
+                            <Button className="btn-block" color="success" onClick={async(e) => await this.validateSchemaCustom(e)}>Submit Transaction Hash</Button>
                             <Modal isOpen={this.state.modal3} toggle={this.toggleModal3}>
                                 <ModalHeader toggle={this.toggleModal3}>Validation</ModalHeader>
                                 <ModalBody>
