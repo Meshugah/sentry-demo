@@ -21,7 +21,7 @@ const customSchema = Joi.string().custom(async (value, helper) => {
         const response = await axios.post('https://api.bridge.matic.today/api/bridge/approval', {
             "txHashes": [`${value}`]
         })
-        const responseCode = await response.data.approvalTxStatus[`${value}`].code
+        const responseCode = response.data.approvalTxStatus[`${value}`].code
         if (responseCode === 5) return true
         else return false
     }catch(e) {
